@@ -29,17 +29,16 @@ func StringToSign(req *http.Request, headers []string) string {
 	buffer.WriteString(req.Method)
 	buffer.WriteString("\n")
 
-	for headerNum, header := range headers {
-		tag := strconv.Itoa(headerNum)
+	for _, header := range headers {
 		values := req.Header[header]
-		for _, value := range values {
-			buffer.WriteString(tag)
+		lastIndex := len(values) - 1
+		for i, value := range values {
 			buffer.WriteString(value)
-			buffer.WriteString("\n")
+			if i != lastIndex {
+				buffer.WriteString(",")
+			}
 		}
-		if len(values) == 0 {
-			buffer.WriteString("\n")
-		}
+		buffer.WriteString("\n")
 	}
 	buffer.WriteString(req.URL.Path)
 	if req.URL.RawQuery != "" {
