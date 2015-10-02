@@ -29,9 +29,11 @@ func StringToSign(req *http.Request, headers []string) string {
 	buffer.WriteString(req.Method)
 	buffer.WriteString("\n")
 
-	for _, header := range headers {
+	for headerNum, header := range headers {
+		tag := strconv.Itoa(headerNum)
 		values := req.Header[header]
 		for _, value := range values {
+			buffer.WriteString(tag)
 			buffer.WriteString(value)
 			buffer.WriteString("\n")
 		}

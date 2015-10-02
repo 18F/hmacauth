@@ -68,20 +68,20 @@ func TestRequestSignaturePost(t *testing.T) {
 	)
 	assert.Equal(t, StringToSign(req, HEADERS), strings.Join([]string{
 		"POST",
-		strconv.Itoa(len(body)),
-		"deadbeef",
-		"application/json",
-		"2015-09-28",
-		"trust me",
-		"mbland",
-		"mbland@acm.org",
-		"feedbead",
-		"foo; bar; baz=quux",
-		"mbland",
+		"0" + strconv.Itoa(len(body)),
+		"1deadbeef",
+		"2application/json",
+		"32015-09-28",
+		"4trust me",
+		"5mbland",
+		"6mbland@acm.org",
+		"7feedbead",
+		"8foo; bar; baz=quux",
+		"9mbland",
 		"/foo/bar",
 	}, "\n"))
 	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
-		"sha1 722UbRYfC6MnjtIxqEJMDPrW2mk=")
+		"sha1 Z7pb9nRlDgdrWgEG-onLubac-0w=")
 }
 
 func newGetRequest() *http.Request {
@@ -102,17 +102,17 @@ func TestRequestSignatureGet(t *testing.T) {
 		"",
 		"",
 		"",
-		"2015-09-29",
+		"32015-09-29",
 		"",
 		"",
 		"",
 		"",
-		"foo; bar; baz=quux",
-		"mbland",
+		"8foo; bar; baz=quux",
+		"9mbland",
 		"/foo/bar",
 	}, "\n"))
 	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
-		"sha1 JBQJcmSTteQyHZXFUA9glis9BIk=")
+		"sha1 pehRvdQcu0CxCIN9Ky-a5jasYYw=")
 }
 
 func TestRequestSignatureGetWithQuery(t *testing.T) {
@@ -130,17 +130,17 @@ func TestRequestSignatureGetWithQuery(t *testing.T) {
 		"",
 		"",
 		"",
-		"2015-09-29",
+		"32015-09-29",
 		"",
 		"",
 		"",
 		"",
-		"foo; bar; baz=quux",
-		"mbland",
+		"8foo; bar; baz=quux",
+		"9mbland",
 		"/foo/bar?baz=quux",
 	}, "\n"))
 	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
-		"sha1 IdVTzG_70lbqE52JoYHmR2oDYO8=")
+		"sha1 vmli4diHuoO8zY6_9aXmA_yli_o=")
 }
 
 func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
@@ -161,19 +161,19 @@ func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 		"",
 		"",
 		"",
-		"2015-09-29",
+		"32015-09-29",
 		"",
 		"",
 		"",
 		"",
-		"foo",
-		"bar",
-		"baz=quux",
-		"mbland",
+		"8foo",
+		"8bar",
+		"8baz=quux",
+		"9mbland",
 		"/foo/bar",
 	}, "\n"))
 	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
-		"sha1 3QTHq0aEEwZz637DtDXoT48afrc=")
+		"sha1 cSoEl8xNddC3AiYzPlsFWQg8H3w=")
 }
 
 func TestValidateRequestNoSignature(t *testing.T) {
