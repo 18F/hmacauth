@@ -29,9 +29,15 @@ func StringToSign(req *http.Request, headers []string) string {
 	buffer.WriteString(req.Method)
 	buffer.WriteString("\n")
 
-	for i := 0; i != len(headers); i++ {
-		buffer.WriteString(req.Header.Get(headers[i]))
-		buffer.WriteString("\n")
+	for _, header := range headers {
+		values := req.Header[header]
+		for _, value := range values {
+			buffer.WriteString(value)
+			buffer.WriteString("\n")
+		}
+		if len(values) == 0 {
+			buffer.WriteString("\n")
+		}
 	}
 	buffer.WriteString(req.URL.String())
 	return buffer.String()

@@ -84,8 +84,8 @@ func TestRequestSignaturePost(t *testing.T) {
 		"sha1 722UbRYfC6MnjtIxqEJMDPrW2mk=")
 }
 
-func TestRequestSignatureGet(t *testing.T) {
-	req := newTestRequest(
+func newGetRequest() *http.Request {
+	return newTestRequest(
 		"GET /foo/bar HTTP/1.1",
 		"Date: 2015-09-29",
 		"Cookie: foo; bar; baz=quux",
@@ -93,6 +93,10 @@ func TestRequestSignatureGet(t *testing.T) {
 		"",
 		"",
 	)
+}
+
+func TestRequestSignatureGet(t *testing.T) {
+	req := newGetRequest()
 	assert.Equal(t, StringToSign(req, HEADERS), strings.Join([]string{
 		"GET",
 		"",
@@ -111,15 +115,65 @@ func TestRequestSignatureGet(t *testing.T) {
 		"sha1 JBQJcmSTteQyHZXFUA9glis9BIk=")
 }
 
-func newGetRequest() *http.Request {
-	return newTestRequest(
-		"GET /foo/bar HTTP/1.1",
+func TestRequestSignatureGetWithQuery(t *testing.T) {
+	req := newTestRequest(
+		"GET /foo/bar?baz=quux HTTP/1.1",
 		"Date: 2015-09-29",
 		"Cookie: foo; bar; baz=quux",
 		"Gap-Auth: mbland",
 		"",
 		"",
 	)
+
+	assert.Equal(t, StringToSign(req, HEADERS), strings.Join([]string{
+		"GET",
+		"",
+		"",
+		"",
+		"2015-09-29",
+		"",
+		"",
+		"",
+		"",
+		"foo; bar; baz=quux",
+		"mbland",
+		"/foo/bar?baz=quux",
+	}, "\n"))
+	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
+		"sha1 IdVTzG_70lbqE52JoYHmR2oDYO8=")
+}
+
+func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
+	// Just using "Cookie:" out of convenience.
+	req := newTestRequest(
+		"GET /foo/bar HTTP/1.1",
+		"Date: 2015-09-29",
+		"Cookie: foo",
+		"Cookie: bar",
+		"Cookie: baz=quux",
+		"Gap-Auth: mbland",
+		"",
+		"",
+	)
+
+	assert.Equal(t, StringToSign(req, HEADERS), strings.Join([]string{
+		"GET",
+		"",
+		"",
+		"",
+		"2015-09-29",
+		"",
+		"",
+		"",
+		"",
+		"foo",
+		"bar",
+		"baz=quux",
+		"mbland",
+		"/foo/bar",
+	}, "\n"))
+	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
+		"sha1 3QTHq0aEEwZz637DtDXoT48afrc=")
 }
 
 func TestValidateRequestNoSignature(t *testing.T) {
