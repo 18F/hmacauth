@@ -41,7 +41,15 @@ func StringToSign(req *http.Request, headers []string) string {
 			buffer.WriteString("\n")
 		}
 	}
-	buffer.WriteString(req.URL.String())
+	buffer.WriteString(req.URL.Path)
+	if req.URL.RawQuery != "" {
+		buffer.WriteString("?")
+		buffer.WriteString(req.URL.RawQuery)
+	}
+	if req.URL.Fragment != "" {
+		buffer.WriteString("#")
+		buffer.WriteString(req.URL.Fragment)
+	}
 	return buffer.String()
 }
 

@@ -143,6 +143,34 @@ func TestRequestSignatureGetWithQuery(t *testing.T) {
 		"sha1 vmli4diHuoO8zY6_9aXmA_yli_o=")
 }
 
+func TestRequestSignatureGetWithFullUrl(t *testing.T) {
+	req := newTestRequest(
+		"GET http://localhost/foo/bar?baz=quux#xyzzy HTTP/1.1",
+		"Date: 2015-09-29",
+		"Cookie: foo; bar; baz=quux",
+		"Gap-Auth: mbland",
+		"",
+		"",
+	)
+
+	assert.Equal(t, StringToSign(req, HEADERS), strings.Join([]string{
+		"GET",
+		"",
+		"",
+		"",
+		"32015-09-29",
+		"",
+		"",
+		"",
+		"",
+		"8foo; bar; baz=quux",
+		"9mbland",
+		"/foo/bar?baz=quux#xyzzy",
+	}, "\n"))
+	assert.Equal(t, RequestSignature(req, crypto.SHA1, HEADERS, "foobar"),
+		"sha1 q5cfavzhqjXieJPAH_fxZHAH3eE=")
+}
+
 func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 	// Just using "Cookie:" out of convenience.
 	req := newTestRequest(
