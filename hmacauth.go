@@ -82,7 +82,7 @@ func RequestSignature(req *http.Request, hashAlgorithm crypto.Hash,
 	var sig []byte
 	sig = h.Sum(sig)
 	return algorithmName[hashAlgorithm] + " " +
-		base64.URLEncoding.EncodeToString(sig)
+		base64.StdEncoding.EncodeToString(sig)
 }
 
 type ValidationResult int
