@@ -26,9 +26,8 @@ var algorithmName map[crypto.Hash]string
 func init() {
 	algorithmName = make(map[crypto.Hash]string)
 	for name, algorithm := range supportedAlgorithms {
-		if algorithm.Available() {
-			algorithmName[algorithm] = name
-		} else {
+		algorithmName[algorithm] = name
+		if algorithm.Available() == false {
 			delete(supportedAlgorithms, name)
 		}
 	}
@@ -44,8 +43,11 @@ type HmacAuth struct {
 func NewHmacAuth(hash crypto.Hash, key []byte, header string,
 	headers []string) *HmacAuth {
 	if hash.Available() == false {
-		panic("hmacauth: hash algorithm #" + strconv.Itoa(int(hash)) +
-			" is unavailable")
+		var name string
+		if name = algorithmName[hash]; name == "" {
+			name = "#" + strconv.Itoa(int(hash))
+		}
+		panic("hmacauth: hash algorithm " + name + " is unavailable")
 	}
 	return &HmacAuth{hash, key, header, headers}
 }

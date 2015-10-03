@@ -41,6 +41,15 @@ func TestUnsupportedHashAlgorithm(t *testing.T) {
 	assert.Equal(t, algorithm.Available(), false)
 }
 
+func TestUnsupportedAlgorithmWillCauseNewHmacAuthToPanic(t *testing.T) {
+	defer func() {
+		err := recover()
+		assert.Equal(t, err,
+			"hmacauth: hash algorithm #0 is unavailable")
+	}()
+	NewHmacAuth(crypto.Hash(0), nil, "", nil)
+}
+
 func newTestRequest(request ...string) (req *http.Request) {
 	reqBuf := bufio.NewReader(
 		strings.NewReader(strings.Join(request, "\n")))
