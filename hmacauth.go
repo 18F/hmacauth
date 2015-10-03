@@ -10,21 +10,20 @@ import (
 	"strings"
 )
 
-var supportedAlgorithms map[string]crypto.Hash
+var supportedAlgorithms map[string]crypto.Hash = map[string]crypto.Hash{
+	"md4":       crypto.MD4,
+	"md5":       crypto.MD5,
+	"sha1":      crypto.SHA1,
+	"sha224":    crypto.SHA224,
+	"sha256":    crypto.SHA256,
+	"sha384":    crypto.SHA384,
+	"sha512":    crypto.SHA512,
+	"ripemd160": crypto.RIPEMD160,
+}
+
 var algorithmName map[crypto.Hash]string
 
 func init() {
-	supportedAlgorithms = map[string]crypto.Hash{
-		"md4":       crypto.MD4,
-		"md5":       crypto.MD5,
-		"sha1":      crypto.SHA1,
-		"sha224":    crypto.SHA224,
-		"sha256":    crypto.SHA256,
-		"sha384":    crypto.SHA384,
-		"sha512":    crypto.SHA512,
-		"ripemd160": crypto.RIPEMD160,
-	}
-
 	algorithmName = make(map[crypto.Hash]string)
 	for name, algorithm := range supportedAlgorithms {
 		if algorithm.Available() {
@@ -133,8 +132,17 @@ const (
 	MISMATCH
 )
 
+var validationResultStrings []string = []string{
+	"",
+	"NO_SIGNATURE",
+	"INVALID_FORMAT",
+	"UNSUPPORTED_ALGORITHM",
+	"MATCH",
+	"MISMATCH",
+}
+
 func (result ValidationResult) String() string {
-	return strconv.Itoa(int(result))
+	return validationResultStrings[result]
 }
 
 func (auth *HmacAuth) ValidateRequest(request *http.Request) (
