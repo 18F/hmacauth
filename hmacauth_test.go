@@ -200,7 +200,7 @@ func TestValidateRequestMatch(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	expected := h.RequestSignature(req)
-	req.Header.Set("GAP-Signature", expected)
+	h.SignRequest(req)
 	result, header, computed := h.ValidateRequest(req)
 	assert.Equal(t, result, MATCH)
 	assert.Equal(t, header, expected)
@@ -212,11 +212,9 @@ func TestValidateRequestMismatch(t *testing.T) {
 	barbazAuth := NewHmacAuth(
 		crypto.SHA1, []byte("barbaz"), "GAP-Signature", HEADERS)
 	req := newGetRequest()
-	foobarSignature := foobarAuth.RequestSignature(req)
-	barbazSignature := barbazAuth.RequestSignature(req)
-	req.Header.Set("GAP-Signature", foobarSignature)
+	foobarAuth.SignRequest(req)
 	result, header, computed := barbazAuth.ValidateRequest(req)
 	assert.Equal(t, result, MISMATCH)
-	assert.Equal(t, header, foobarSignature)
-	assert.Equal(t, computed, barbazSignature)
+	assert.Equal(t, header, foobarAuth.RequestSignature(req))
+	assert.Equal(t, computed, barbazAuth.RequestSignature(req))
 }
