@@ -98,9 +98,10 @@ func (result ValidationResult) String() string {
 	return strconv.Itoa(int(result))
 }
 
-func ValidateRequest(request *http.Request, headers []string, key string) (
+func ValidateRequest(request *http.Request, signatureHeader string,
+	headers []string, key string) (
 	result ValidationResult, headerSignature, computedSignature string) {
-	headerSignature = request.Header.Get("Gap-Signature")
+	headerSignature = request.Header.Get(signatureHeader)
 	if headerSignature == "" {
 		result = NO_SIGNATURE
 		return

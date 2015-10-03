@@ -156,7 +156,8 @@ func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 
 func TestValidateRequestNoSignature(t *testing.T) {
 	req := newGetRequest()
-	result, header, computed := ValidateRequest(req, HEADERS, "foobar")
+	result, header, computed := ValidateRequest(
+		req, "GAP-Signature", HEADERS, "foobar")
 	assert.Equal(t, result, NO_SIGNATURE)
 	assert.Equal(t, header, "")
 	assert.Equal(t, computed, "")
@@ -166,7 +167,8 @@ func TestValidateRequestInvalidFormat(t *testing.T) {
 	req := newGetRequest()
 	badValue := "should be algorithm and digest value"
 	req.Header.Set("GAP-Signature", badValue)
-	result, header, computed := ValidateRequest(req, HEADERS, "foobar")
+	result, header, computed := ValidateRequest(
+		req, "GAP-Signature", HEADERS, "foobar")
 	assert.Equal(t, result, INVALID_FORMAT)
 	assert.Equal(t, header, badValue)
 	assert.Equal(t, computed, "")
@@ -178,7 +180,8 @@ func TestValidateRequestUnsupportedAlgorithm(t *testing.T) {
 	components := strings.Split(validSignature, " ")
 	signatureWithUnsupportedAlgorithm := "unsupported " + components[1]
 	req.Header.Set("GAP-Signature", signatureWithUnsupportedAlgorithm)
-	result, header, computed := ValidateRequest(req, HEADERS, "foobar")
+	result, header, computed := ValidateRequest(
+		req, "GAP-Signature", HEADERS, "foobar")
 	assert.Equal(t, result, UNSUPPORTED_ALGORITHM)
 	assert.Equal(t, header, signatureWithUnsupportedAlgorithm)
 	assert.Equal(t, computed, "")
@@ -188,7 +191,8 @@ func TestValidateRequestMatch(t *testing.T) {
 	req := newGetRequest()
 	expected := RequestSignature(req, crypto.SHA1, HEADERS, "foobar")
 	req.Header.Set("GAP-Signature", expected)
-	result, header, computed := ValidateRequest(req, HEADERS, "foobar")
+	result, header, computed := ValidateRequest(
+		req, "GAP-Signature", HEADERS, "foobar")
 	assert.Equal(t, result, MATCH)
 	assert.Equal(t, header, expected)
 	assert.Equal(t, computed, expected)
@@ -199,7 +203,8 @@ func TestValidateRequestMismatch(t *testing.T) {
 	foobarSignature := RequestSignature(req, crypto.SHA1, HEADERS, "foobar")
 	barbazSignature := RequestSignature(req, crypto.SHA1, HEADERS, "barbaz")
 	req.Header.Set("GAP-Signature", foobarSignature)
-	result, header, computed := ValidateRequest(req, HEADERS, "barbaz")
+	result, header, computed := ValidateRequest(
+		req, "GAP-Signature", HEADERS, "barbaz")
 	assert.Equal(t, result, MISMATCH)
 	assert.Equal(t, header, foobarSignature)
 	assert.Equal(t, computed, barbazSignature)
