@@ -24,12 +24,27 @@ func init() {
 	}
 }
 
-func StringToSign(req *http.Request, headers []string) string {
+type HmacAuth struct {
+	hash    crypto.Hash
+	key     []byte
+	header  string
+	headers []string
+}
+
+func NewHmacAuth(hash crypto.Hash, key []byte, header string,
+	headers []string) *HmacAuth {
+	if algorithmName[hash] == "" {
+		panic("unsupported hash algorithm: " + strconv.Itoa(int(hash)))
+	}
+	return &HmacAuth{hash, key, header, headers}
+}
+
+func (auth *HmacAuth) StringToSign(req *http.Request) string {
 	var buffer bytes.Buffer
 	buffer.WriteString(req.Method)
 	buffer.WriteString("\n")
 
-	for _, header := range headers {
+	for _, header := range auth.headers {
 		values := req.Header[header]
 		lastIndex := len(values) - 1
 		for i, value := range values {
@@ -67,10 +82,14 @@ func HashAlgorithm(algorithm string) (result crypto.Hash, err error) {
 	return
 }
 
-func RequestSignature(req *http.Request, hashAlgorithm crypto.Hash,
-	headers []string, secretKey string) string {
-	h := hmac.New(hashAlgorithm.New, []byte(secretKey))
-	h.Write([]byte(StringToSign(req, headers)))
+func (auth *HmacAuth) RequestSignature(req *http.Request) string {
+	return auth.requestSignature(req, auth.hash)
+}
+
+func (auth *HmacAuth) requestSignature(req *http.Request,
+	hashAlgorithm crypto.Hash) string {
+	h := hmac.New(hashAlgorithm.New, auth.key)
+	h.Write([]byte(auth.StringToSign(req)))
 
 	if req.ContentLength != -1 && req.Body != nil {
 		buf := make([]byte, req.ContentLength, req.ContentLength)
@@ -98,10 +117,9 @@ func (result ValidationResult) String() string {
 	return strconv.Itoa(int(result))
 }
 
-func ValidateRequest(request *http.Request, signatureHeader string,
-	headers []string, key string) (
+func (auth *HmacAuth) ValidateRequest(request *http.Request) (
 	result ValidationResult, headerSignature, computedSignature string) {
-	headerSignature = request.Header.Get(signatureHeader)
+	headerSignature = request.Header.Get(auth.header)
 	if headerSignature == "" {
 		result = NO_SIGNATURE
 		return
@@ -119,7 +137,7 @@ func ValidateRequest(request *http.Request, signatureHeader string,
 		return
 	}
 
-	computedSignature = RequestSignature(request, algorithm, headers, key)
+	computedSignature = auth.requestSignature(request, algorithm)
 	if hmac.Equal([]byte(headerSignature), []byte(computedSignature)) {
 		result = MATCH
 	} else {
