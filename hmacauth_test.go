@@ -35,6 +35,8 @@ func TestSupportedHashAlgorithm(t *testing.T) {
 func TestUnsupportedHashAlgorithm(t *testing.T) {
 	algorithm, err := HashAlgorithm("unsupported")
 	assert.NotEqual(t, err, nil)
+	assert.Equal(t, err.Error(),
+		"unsupported request signature algorithm: unsupported")
 	assert.Equal(t, algorithm, crypto.Hash(0))
 	assert.Equal(t, algorithm.Available(), false)
 }
