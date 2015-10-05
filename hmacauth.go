@@ -66,7 +66,11 @@ func NewHmacAuth(hash crypto.Hash, key []byte, header string,
 		}
 		panic("hmacauth: hash algorithm " + name + " is unavailable")
 	}
-	return &HmacAuth{hash, key, header, headers}
+	canonicalHeaders := make([]string, len(headers))
+	for i, h := range headers {
+		canonicalHeaders[i] = http.CanonicalHeaderKey(h)
+	}
+	return &HmacAuth{hash, key, header, canonicalHeaders}
 }
 
 func (auth *HmacAuth) StringToSign(req *http.Request) string {
