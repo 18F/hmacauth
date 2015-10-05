@@ -11,6 +11,16 @@ import (
 	"strings"
 )
 
+type HmacAuth interface {
+	StringToSign(req *http.Request) string
+	SignRequest(req *http.Request)
+	RequestSignature(req *http.Request) string
+	SignatureFromHeader(req *http.Request) string
+	ValidateRequest(request *http.Request) (
+		result ValidationResult,
+		headerSignature, computedSignature string)
+}
+
 var supportedAlgorithms map[string]crypto.Hash = map[string]crypto.Hash{
 	"md4":       crypto.MD4,
 	"md5":       crypto.MD5,
@@ -28,6 +38,12 @@ func init() {
 	algorithmName = make(map[crypto.Hash]string)
 	for name, algorithm := range supportedAlgorithms {
 		algorithmName[algorithm] = name
+		// Make sure the algorithm is linked into the binary, per
+		// https://golang.org/pkg/crypto/#Hash.Available
+		//
+		// Note that both sides of the client/server connection must
+		// have an algorithm available in order to successfully
+		// authenticate using that algorithm
 		if algorithm.Available() == false {
 			delete(supportedAlgorithms, name)
 		}
@@ -35,7 +51,8 @@ func init() {
 }
 
 func DigestNameToCryptoHash(name string) (result crypto.Hash, err error) {
-	if result = supportedAlgorithms[name]; result == crypto.Hash(0) {
+	var supported bool
+	if result, supported = supportedAlgorithms[name]; !supported {
 		err = errors.New("hmacauth: hash algorithm not supported: " +
 			name)
 	}
@@ -43,14 +60,15 @@ func DigestNameToCryptoHash(name string) (result crypto.Hash, err error) {
 }
 
 func CryptoHashToDigestName(id crypto.Hash) (result string, err error) {
-	if result = algorithmName[id]; result == "" {
+	var supported bool
+	if result, supported = algorithmName[id]; !supported {
 		err = errors.New("hmacauth: unsupported crypto.Hash #" +
 			strconv.Itoa(int(id)))
 	}
 	return
 }
 
-type HmacAuth struct {
+type hmacAuth struct {
 	hash    crypto.Hash
 	key     []byte
 	header  string
@@ -58,10 +76,11 @@ type HmacAuth struct {
 }
 
 func NewHmacAuth(hash crypto.Hash, key []byte, header string,
-	headers []string) *HmacAuth {
+	headers []string) HmacAuth {
 	if hash.Available() == false {
 		var name string
-		if name = algorithmName[hash]; name == "" {
+		var supported bool
+		if name, supported = algorithmName[hash]; !supported {
 			name = "#" + strconv.Itoa(int(hash))
 		}
 		panic("hmacauth: hash algorithm " + name + " is unavailable")
@@ -70,10 +89,10 @@ func NewHmacAuth(hash crypto.Hash, key []byte, header string,
 	for i, h := range headers {
 		canonicalHeaders[i] = http.CanonicalHeaderKey(h)
 	}
-	return &HmacAuth{hash, key, header, canonicalHeaders}
+	return &hmacAuth{hash, key, header, canonicalHeaders}
 }
 
-func (auth *HmacAuth) StringToSign(req *http.Request) string {
+func (auth *hmacAuth) StringToSign(req *http.Request) string {
 	var buffer bytes.Buffer
 	buffer.WriteString(req.Method)
 	buffer.WriteString("\n")
@@ -117,15 +136,15 @@ func HashAlgorithm(algorithm string) (result crypto.Hash, err error) {
 	return
 }
 
-func (auth *HmacAuth) SignRequest(req *http.Request) {
+func (auth *hmacAuth) SignRequest(req *http.Request) {
 	req.Header.Set(auth.header, auth.RequestSignature(req))
 }
 
-func (auth *HmacAuth) RequestSignature(req *http.Request) string {
+func (auth *hmacAuth) RequestSignature(req *http.Request) string {
 	return requestSignature(auth, req, auth.hash)
 }
 
-func requestSignature(auth *HmacAuth, req *http.Request,
+func requestSignature(auth *hmacAuth, req *http.Request,
 	hashAlgorithm crypto.Hash) string {
 	h := hmac.New(hashAlgorithm.New, auth.key)
 	h.Write([]byte(auth.StringToSign(req)))
@@ -142,7 +161,7 @@ func requestSignature(auth *HmacAuth, req *http.Request,
 		base64.StdEncoding.EncodeToString(sig)
 }
 
-func (auth *HmacAuth) SignatureFromHeader(req *http.Request) string {
+func (auth *hmacAuth) SignatureFromHeader(req *http.Request) string {
 	return req.Header.Get(auth.header)
 }
 
@@ -169,7 +188,7 @@ func (result ValidationResult) String() string {
 	return validationResultStrings[result]
 }
 
-func (auth *HmacAuth) ValidateRequest(request *http.Request) (
+func (auth *hmacAuth) ValidateRequest(request *http.Request) (
 	result ValidationResult, headerSignature, computedSignature string) {
 	headerSignature = auth.SignatureFromHeader(request)
 	if headerSignature == "" {

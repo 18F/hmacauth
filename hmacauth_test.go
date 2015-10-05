@@ -1,8 +1,9 @@
-package hmacauth
+package hmacauth_test
 
 import (
 	"bufio"
 	"crypto"
+	. "github.com/18F/hmacauth"
 	"net/http"
 	"strconv"
 	"strings"
@@ -60,7 +61,7 @@ func newTestRequest(request ...string) (req *http.Request) {
 	}
 }
 
-func testHmacAuth() *HmacAuth {
+func testHmacAuth() HmacAuth {
 	return NewHmacAuth(
 		crypto.SHA1, []byte("foobar"), "GAP-Signature", HEADERS)
 }
