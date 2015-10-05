@@ -98,6 +98,7 @@ func (auth *HmacAuth) StringToSign(req *http.Request) string {
 		buffer.WriteString("#")
 		buffer.WriteString(req.URL.Fragment)
 	}
+	buffer.WriteString("\n")
 	return buffer.String()
 }
 

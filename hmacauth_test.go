@@ -97,9 +97,9 @@ func TestRequestSignaturePost(t *testing.T) {
 		"foo; bar; baz=quux",
 		"mbland",
 		"/foo/bar",
-	}, "\n"))
+	}, "\n")+"\n")
 	assert.Equal(t, h.RequestSignature(req),
-		"sha1 722UbRYfC6MnjtIxqEJMDPrW2mk=")
+		"sha1 K4IrVDtMCRwwW8Oms0VyZWMjXHI=")
 }
 
 func newGetRequest() *http.Request {
@@ -115,7 +115,7 @@ func newGetRequest() *http.Request {
 
 func TestRequestSignatureGetWithFullUrl(t *testing.T) {
 	req := newTestRequest(
-		"GET http://localhost/foo/bar?baz=quux#xyzzy HTTP/1.1",
+		"GET http://localhost/foo/bar?baz=quux%2Fxyzzy#plugh HTTP/1.1",
 		"Date: 2015-09-29",
 		"Cookie: foo; bar; baz=quux",
 		"Gap-Auth: mbland",
@@ -136,10 +136,10 @@ func TestRequestSignatureGetWithFullUrl(t *testing.T) {
 		"",
 		"foo; bar; baz=quux",
 		"mbland",
-		"/foo/bar?baz=quux#xyzzy",
-	}, "\n"))
+		"/foo/bar?baz=quux%2Fxyzzy#plugh",
+	}, "\n")+"\n")
 	assert.Equal(t, h.RequestSignature(req),
-		"sha1 gw1nuRYzkocv5q8nQSo3pT5F970=")
+		"sha1 ih5Jce9nsltry63rR4ImNz2hdnk=")
 }
 
 func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
@@ -169,9 +169,9 @@ func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 		"foo,bar,baz=quux",
 		"mbland",
 		"/foo/bar",
-	}, "\n"))
+	}, "\n")+"\n")
 	assert.Equal(t, h.RequestSignature(req),
-		"sha1 VnoxQC+mg2Oils+Cbz1j1c9LXLE=")
+		"sha1 JlRkes1X+qq3Bgc/GcRyLos+4aI=")
 }
 
 func TestValidateRequestNoSignature(t *testing.T) {
