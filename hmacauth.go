@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,6 +32,22 @@ func init() {
 			delete(supportedAlgorithms, name)
 		}
 	}
+}
+
+func DigestNameToCryptoHash(name string) (result crypto.Hash, err error) {
+	if result = supportedAlgorithms[name]; result == crypto.Hash(0) {
+		err = errors.New("hmacauth: hash algorithm not supported: " +
+			name)
+	}
+	return
+}
+
+func CryptoHashToDigestName(id crypto.Hash) (result string, err error) {
+	if result = algorithmName[id]; result == "" {
+		err = errors.New("hmacauth: unsupported crypto.Hash #" +
+			strconv.Itoa(int(id)))
+	}
+	return
 }
 
 type HmacAuth struct {
