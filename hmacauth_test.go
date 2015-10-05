@@ -1,9 +1,8 @@
-package hmacauth_test
+package hmacauth
 
 import (
 	"bufio"
 	"crypto"
-	. "github.com/18F/hmacauth"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +12,7 @@ import (
 )
 
 // These correspond to the headers used in bitly/oauth2_proxy#147.
-var HEADERS []string = []string{
+var HEADERS = []string{
 	"Content-Length",
 	"Content-Md5",
 	"Content-Type",
@@ -27,22 +26,22 @@ var HEADERS []string = []string{
 }
 
 func TestSupportedHashAlgorithm(t *testing.T) {
-	algorithm, err := HashAlgorithm("sha1")
+	algorithm, err := DigestNameToCryptoHash("sha1")
 	assert.Equal(t, err, nil)
 	assert.Equal(t, algorithm, crypto.SHA1)
 	assert.Equal(t, algorithm.Available(), true)
 }
 
 func TestUnsupportedHashAlgorithm(t *testing.T) {
-	algorithm, err := HashAlgorithm("unsupported")
+	algorithm, err := DigestNameToCryptoHash("unsupported")
 	assert.NotEqual(t, err, nil)
 	assert.Equal(t, err.Error(),
-		"unsupported request signature algorithm: unsupported")
+		"hmacauth: hash algorithm not supported: unsupported")
 	assert.Equal(t, algorithm, crypto.Hash(0))
 	assert.Equal(t, algorithm.Available(), false)
 }
 
-func TestUnsupportedAlgorithmWillCauseNewHmacAuthToPanic(t *testing.T) {
+func TestResultUnsupportedAlgorithmWillCauseNewHmacAuthToPanic(t *testing.T) {
 	defer func() {
 		err := recover()
 		assert.Equal(t, err,
@@ -175,46 +174,47 @@ func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 		"sha1 JlRkes1X+qq3Bgc/GcRyLos+4aI=")
 }
 
-func TestValidateRequestNoSignature(t *testing.T) {
+func TestValidateRequestResultNoSignature(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	result, header, computed := h.ValidateRequest(req)
-	assert.Equal(t, result, NO_SIGNATURE)
+	assert.Equal(t, result, ResultNoSignature)
 	assert.Equal(t, header, "")
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestInvalidFormat(t *testing.T) {
+func TestValidateRequestResultInvalidFormat(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	badValue := "should be algorithm and digest value"
 	req.Header.Set("GAP-Signature", badValue)
 	result, header, computed := h.ValidateRequest(req)
-	assert.Equal(t, result, INVALID_FORMAT)
+	assert.Equal(t, result, ResultInvalidFormat)
 	assert.Equal(t, header, badValue)
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestUnsupportedAlgorithm(t *testing.T) {
+func TestValidateRequestResultUnsupportedAlgorithm(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	validSignature := h.RequestSignature(req)
 	components := strings.Split(validSignature, " ")
-	signatureWithUnsupportedAlgorithm := "unsupported " + components[1]
-	req.Header.Set("GAP-Signature", signatureWithUnsupportedAlgorithm)
+	signatureWithResultUnsupportedAlgorithm := "unsupported " +
+		components[1]
+	req.Header.Set("GAP-Signature", signatureWithResultUnsupportedAlgorithm)
 	result, header, computed := h.ValidateRequest(req)
-	assert.Equal(t, result, UNSUPPORTED_ALGORITHM)
-	assert.Equal(t, header, signatureWithUnsupportedAlgorithm)
+	assert.Equal(t, result, ResultUnsupportedAlgorithm)
+	assert.Equal(t, header, signatureWithResultUnsupportedAlgorithm)
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestMatch(t *testing.T) {
+func TestValidateRequestResultMatch(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	expected := h.RequestSignature(req)
 	h.SignRequest(req)
 	result, header, computed := h.ValidateRequest(req)
-	assert.Equal(t, result, MATCH)
+	assert.Equal(t, result, ResultMatch)
 	assert.Equal(t, header, expected)
 	assert.Equal(t, computed, expected)
 }
@@ -226,7 +226,7 @@ func TestValidateRequestMismatch(t *testing.T) {
 	req := newGetRequest()
 	foobarAuth.SignRequest(req)
 	result, header, computed := barbazAuth.ValidateRequest(req)
-	assert.Equal(t, result, MISMATCH)
+	assert.Equal(t, result, ResultMismatch)
 	assert.Equal(t, header, foobarAuth.RequestSignature(req))
 	assert.Equal(t, computed, barbazAuth.RequestSignature(req))
 }
