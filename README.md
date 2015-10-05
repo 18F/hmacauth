@@ -2,6 +2,10 @@
 
 Signs and validates HTTP requests based on a shared-secret HMAC signature.
 
+Developed in parallel with the following packages for other languages:
+- Node.js: [hmac-authentication](https://www.npmjs.com/package/hmac-authentication)
+- Ruby: [hmac_authentication](https://rubygems.org/gems/hmac_authentication)
+
 ## Installation
 
 ```go
