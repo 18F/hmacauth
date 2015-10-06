@@ -1,5 +1,9 @@
 # hmacauth HMAC authentication package for Go
 
+[![Build Status](https://travis-ci.org/18F/hmacauth.svg?branch=master)](https://travis-ci.org/18F/hmacauth)
+
+[![Coverage Status](https://coveralls.io/repos/18F/hmacauth/badge.svg?branch=master&service=github)](https://coveralls.io/github/18F/hmacauth?branch=master)
+
 Signs and validates HTTP requests based on a shared-secret HMAC signature.
 
 Developed in parallel with the following packages for other languages:
