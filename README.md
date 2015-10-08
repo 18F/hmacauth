@@ -4,7 +4,7 @@
 
 [![Coverage Status](https://coveralls.io/repos/18F/hmacauth/badge.svg?branch=master&service=github)](https://coveralls.io/github/18F/hmacauth?branch=master)
 
-Signs and validates HTTP requests based on a shared-secret HMAC signature.
+Signs and authenticates HTTP requests based on a shared-secret HMAC signature.
 
 Developed in parallel with the following packages for other languages:
 - Node.js: [hmac-authentication](https://www.npmjs.com/package/hmac-authentication)

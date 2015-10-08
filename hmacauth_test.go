@@ -174,27 +174,27 @@ func TestRequestSignatureGetWithMultipleHeadersWithTheSameName(t *testing.T) {
 		"sha1 JlRkes1X+qq3Bgc/GcRyLos+4aI=")
 }
 
-func TestValidateRequestResultNoSignature(t *testing.T) {
+func TestAuthenticateRequestResultNoSignature(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
-	result, header, computed := h.ValidateRequest(req)
+	result, header, computed := h.AuthenticateRequest(req)
 	assert.Equal(t, result, ResultNoSignature)
 	assert.Equal(t, header, "")
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestResultInvalidFormat(t *testing.T) {
+func TestAuthenticateRequestResultInvalidFormat(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	badValue := "should be algorithm and digest value"
 	req.Header.Set("GAP-Signature", badValue)
-	result, header, computed := h.ValidateRequest(req)
+	result, header, computed := h.AuthenticateRequest(req)
 	assert.Equal(t, result, ResultInvalidFormat)
 	assert.Equal(t, header, badValue)
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestResultUnsupportedAlgorithm(t *testing.T) {
+func TestAuthenticateRequestResultUnsupportedAlgorithm(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	validSignature := h.RequestSignature(req)
@@ -202,30 +202,30 @@ func TestValidateRequestResultUnsupportedAlgorithm(t *testing.T) {
 	signatureWithResultUnsupportedAlgorithm := "unsupported " +
 		components[1]
 	req.Header.Set("GAP-Signature", signatureWithResultUnsupportedAlgorithm)
-	result, header, computed := h.ValidateRequest(req)
+	result, header, computed := h.AuthenticateRequest(req)
 	assert.Equal(t, result, ResultUnsupportedAlgorithm)
 	assert.Equal(t, header, signatureWithResultUnsupportedAlgorithm)
 	assert.Equal(t, computed, "")
 }
 
-func TestValidateRequestResultMatch(t *testing.T) {
+func TestAuthenticateRequestResultMatch(t *testing.T) {
 	h := testHmacAuth()
 	req := newGetRequest()
 	expected := h.RequestSignature(req)
 	h.SignRequest(req)
-	result, header, computed := h.ValidateRequest(req)
+	result, header, computed := h.AuthenticateRequest(req)
 	assert.Equal(t, result, ResultMatch)
 	assert.Equal(t, header, expected)
 	assert.Equal(t, computed, expected)
 }
 
-func TestValidateRequestMismatch(t *testing.T) {
+func TestAuthenticateRequestMismatch(t *testing.T) {
 	foobarAuth := testHmacAuth()
 	barbazAuth := NewHmacAuth(
 		crypto.SHA1, []byte("barbaz"), "GAP-Signature", HEADERS)
 	req := newGetRequest()
 	foobarAuth.SignRequest(req)
-	result, header, computed := barbazAuth.ValidateRequest(req)
+	result, header, computed := barbazAuth.AuthenticateRequest(req)
 	assert.Equal(t, result, ResultMismatch)
 	assert.Equal(t, header, foobarAuth.RequestSignature(req))
 	assert.Equal(t, computed, barbazAuth.RequestSignature(req))
