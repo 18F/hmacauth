@@ -28,7 +28,7 @@ type HmacAuth interface {
 
 	// Authenticates the request, returning the result code, the signature
 	// from the header, and the locally-computed signature.
-	ValidateRequest(request *http.Request) (
+	AuthenticateRequest(request *http.Request) (
 		result ValidationResult,
 		headerSignature, computedSignature string)
 }
@@ -169,7 +169,7 @@ func (auth *hmacAuth) SignatureFromHeader(req *http.Request) string {
 }
 
 // ValidationResult is a code used to identify the outcome of
-// HmacAuth.ValidateRequest().
+// HmacAuth.AuthenticateRequest().
 type ValidationResult int
 
 const (
@@ -206,7 +206,7 @@ func (result ValidationResult) String() string {
 	return validationResultStrings[result]
 }
 
-func (auth *hmacAuth) ValidateRequest(request *http.Request) (
+func (auth *hmacAuth) AuthenticateRequest(request *http.Request) (
 	result ValidationResult, headerSignature, computedSignature string) {
 	headerSignature = auth.SignatureFromHeader(request)
 	if headerSignature == "" {
