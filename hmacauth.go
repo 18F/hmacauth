@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"encoding/base64"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -153,9 +154,9 @@ func requestSignature(auth *hmacAuth, req *http.Request,
 	_, _ = h.Write([]byte(auth.StringToSign(req)))
 
 	if req.ContentLength != -1 && req.Body != nil {
-		buf := make([]byte, req.ContentLength, req.ContentLength)
-		_, _ = req.Body.Read(buf)
-		_, _ = h.Write(buf)
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
+		_, _ = h.Write(reqBody)
 	}
 
 	var sig []byte

@@ -3,6 +3,7 @@ package hmacauth
 import (
 	"bufio"
 	"crypto"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -100,6 +101,12 @@ func TestRequestSignaturePost(t *testing.T) {
 	}, "\n")+"\n")
 	assert.Equal(t, h.RequestSignature(req),
 		"sha1 K4IrVDtMCRwwW8Oms0VyZWMjXHI=")
+
+	if requestBody, err := ioutil.ReadAll(req.Body); err != nil {
+		panic(err)
+	} else {
+		assert.Equal(t, string(requestBody), body)
+	}
 }
 
 func newGetRequest() *http.Request {
