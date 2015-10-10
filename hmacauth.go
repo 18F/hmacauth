@@ -153,7 +153,7 @@ func requestSignature(auth *hmacAuth, req *http.Request,
 	h := hmac.New(hashAlgorithm.New, auth.key)
 	_, _ = h.Write([]byte(auth.StringToSign(req)))
 
-	if req.ContentLength != -1 && req.Body != nil {
+	if req.Body != nil {
 		reqBody, _ := ioutil.ReadAll(req.Body)
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
 		_, _ = h.Write(reqBody)

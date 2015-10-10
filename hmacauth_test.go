@@ -3,8 +3,10 @@ package hmacauth
 import (
 	"bufio"
 	"crypto"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
@@ -236,4 +238,64 @@ func TestAuthenticateRequestMismatch(t *testing.T) {
 	assert.Equal(t, result, ResultMismatch)
 	assert.Equal(t, header, foobarAuth.RequestSignature(req))
 	assert.Equal(t, computed, barbazAuth.RequestSignature(req))
+}
+
+type SignatureAuthenticator struct {
+	auth HmacAuth
+}
+
+func (v *SignatureAuthenticator) Authenticate(
+	w http.ResponseWriter, r *http.Request) {
+	result, headerSig, computedSig := v.auth.AuthenticateRequest(r)
+	if result == ResultNoSignature {
+		w.Write([]byte("no signature received"))
+	} else if result == ResultMatch {
+		w.Write([]byte("signatures match"))
+	} else if result == ResultMismatch {
+		w.Write([]byte("signatures do not match:" +
+			"\n  received: " + headerSig +
+			"\n  computed: " + computedSig))
+	} else {
+		panic("Unknown result value: " + result.String())
+	}
+}
+
+// fakeNetConn simulates an http.Request.Body buffer that will be consumed
+// when it is read by the hmacauth.HmacAuth if not handled properly. See:
+//   https://github.com/18F/hmacauth/pull/4
+type fakeNetConn struct {
+	reqBody string
+}
+
+func (fnc *fakeNetConn) Read(p []byte) (n int, err error) {
+	if bodyLen := len(fnc.reqBody); bodyLen != 0 {
+		copy(p, fnc.reqBody)
+		fnc.reqBody = ""
+		return bodyLen, io.EOF
+	}
+	return 0, io.EOF
+}
+
+func TestSendAuthenticatedPostRequestToServer(t *testing.T) {
+	key := "foobar"
+	payload := `{ "hello": "world!" }`
+
+	auth := NewHmacAuth(crypto.SHA1, []byte(key), "X-Test-Signature", nil)
+	authenticator := &SignatureAuthenticator{auth: auth}
+	upstream := httptest.NewServer(
+		http.HandlerFunc(authenticator.Authenticate))
+
+	req, err := http.NewRequest("POST", upstream.URL+"/foo/bar",
+		ioutil.NopCloser(&fakeNetConn{reqBody: payload}))
+	if err != nil {
+		panic(err)
+	}
+	auth.SignRequest(req)
+	if response, err := http.DefaultClient.Do(req); err != nil {
+		panic(err)
+	} else {
+		assert.Equal(t, response.StatusCode, http.StatusOK)
+		responseBody, _ := ioutil.ReadAll(response.Body)
+		assert.Equal(t, "signatures match", string(responseBody))
+	}
 }
