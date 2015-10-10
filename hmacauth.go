@@ -30,7 +30,7 @@ type HmacAuth interface {
 	// Authenticates the request, returning the result code, the signature
 	// from the header, and the locally-computed signature.
 	AuthenticateRequest(request *http.Request) (
-		result ValidationResult,
+		result AuthenticationResult,
 		headerSignature, computedSignature string)
 }
 
@@ -169,14 +169,14 @@ func (auth *hmacAuth) SignatureFromHeader(req *http.Request) string {
 	return req.Header.Get(auth.header)
 }
 
-// ValidationResult is a code used to identify the outcome of
+// AuthenticationResult is a code used to identify the outcome of
 // HmacAuth.AuthenticateRequest().
-type ValidationResult int
+type AuthenticationResult int
 
 const (
 	// ResultNoSignature - the incoming result did not have a signature
 	// header.
-	ResultNoSignature ValidationResult = iota
+	ResultNoSignature AuthenticationResult = iota
 
 	// ResultInvalidFormat - the signature header was not parseable.
 	ResultInvalidFormat
@@ -203,12 +203,13 @@ var validationResultStrings = []string{
 	"ResultMismatch",
 }
 
-func (result ValidationResult) String() string {
+func (result AuthenticationResult) String() string {
 	return validationResultStrings[result]
 }
 
 func (auth *hmacAuth) AuthenticateRequest(request *http.Request) (
-	result ValidationResult, headerSignature, computedSignature string) {
+	result AuthenticationResult, headerSignature,
+	computedSignature string) {
 	headerSignature = auth.SignatureFromHeader(request)
 	if headerSignature == "" {
 		result = ResultNoSignature
